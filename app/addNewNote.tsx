@@ -1,20 +1,40 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 
 const AddNewNote = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const navigate = useNavigation();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newNote = {
-        id: Date.now().toString(),
-        title,
-        description,
-        createdAt: new Date().toISOString().split("T")[0],
+      id: Date.now().toString(),
+      title,
+      description,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+
+    try {
+      const existingNotes = await AsyncStorage.getItem("NOTES");
+
+      const notes = existingNotes ? JSON.parse(existingNotes) : [];
+
+      const updatedNotes = [...notes, newNote];
+      await AsyncStorage.setItem("NOTES", JSON.stringify(updatedNotes));
+    //   console.log("Note saved:", updatedNotes);
+      setTitle("");
+      setDescription("");
+      navigate.goBack();
+    } catch (error) {
+      console.error("Error saving note:", error);
     }
-    console.log("Note saved:", newNote);
+  };
+
+  const handleCancel = () => {
     setTitle("");
     setDescription("");
   };
@@ -58,10 +78,11 @@ const AddNewNote = () => {
           />
 
           <View className="flex-row gap-3 py-3">
-            <TouchableOpacity className="flex-1 bg-gray-500 rounded-xl py-4 items-center">
-              <Text className="text-base font-semibold text-white">
-                Cancel
-              </Text>
+            <TouchableOpacity
+              className="flex-1 bg-gray-500 rounded-xl py-4 items-center"
+              onPress={handleCancel}
+            >
+              <Text className="text-base font-semibold text-white">Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
